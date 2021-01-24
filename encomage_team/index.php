@@ -2,12 +2,32 @@
 include "config.php";
 
 date_default_timezone_set('Europe/Kiev');
-error_reporting(E_ERROR | E_WARNING | E_PARSE);
+error_reporting(E_ERROR | E_PARSE);
 $dbHost = DB_HOST;
 $dbUser = DB_USER;
 $dbPass = DB_PASS;
 $dbName = DB_NAME;
 $dbTable = DB_TABLE;
+
+/*Check if DataBase exist
+if no - Create DataBase*/
+if (checkDB($dbName)) {
+    createDB($dbHost, $dbUser, $dbPass, $dbName);
+}
+
+
+/*Check if table users exist
+if no - create table users */
+if (checkTable($dbTable)) {
+    createTable($dbHost, $dbUser, $dbPass, $dbName, $dbTable);
+}
+
+/*Check if sort_prop (table with options - order - for sorting columns) exist
+if no - create table sort_prop */
+if (checkTable('sort_prop')) {
+    createTableSort($dbHost, $dbUser, $dbPass, $dbName, 'sort_prop');
+}
+
 
 //$change = false;
 $users = [];
@@ -214,35 +234,6 @@ if (isset($_POST['new'])) {
     </html>
 
 <?php
-
-/*Check if DataBase exist
-if no - Create DataBase*/
-if (checkDB($dbName)) {
-    createDB($dbHost, $dbUser, $dbPass, $dbName);
-    if (!checkDB($dbName)) {
-        error();
-    }
-}
-
-
-/*Check if table users exist
-if no - create table users */
-if (checkTable($dbTable)) {
-    createTable($dbHost, $dbUser, $dbPass, $dbName, $dbTable);
-    if (!checkTable($dbTable)) {
-        error();
-    }
-}
-
-/*Check if sort_prop (table with options - order - for sorting columns) exist
-if no - create table sort_prop */
-if (checkTable('sort_prop')) {
-    createTableSort($dbHost, $dbUser, $dbPass, $dbName, 'sort_prop');
-    if (!checkTable('sort_prop')) {
-        error();
-    }
-}
-
 /*function for sort realization*/
 function sort_col($param)
 {
@@ -487,7 +478,7 @@ function error()
 function createDB($dbHost, $dbUser, $dbPass, $dbName)
 {
 
-    $link = mysqli_connect($dbHost, $dbUser, $dbPass);
+    $link = mysqli_connect($dbHost, $dbUser, $dbPass, "", "3306");
 
     $query = "CREATE DATABASE $dbName";
     if (mysqli_query($link, $query)) {
@@ -555,11 +546,16 @@ function createTableSort($dbHost, $dbUser, $dbPass, $dbName, $dbTable)
 /*Checking if DataBase exists*/
 function checkDB($name)
 {
-    $link = connectToDB();
+    $host = DB_HOST;
+    $user = DB_USER;
+    $pass = DB_PASS;
+
+    $link = mysqli_connect($host, $user, $pass);
+
     $query = "SHOW DATABASES LIKE '$name'";
 
     $result = mysqli_query($link, $query);
-
+    $result = mysqli_fetch_array($result);
     $result ? $res = false : $res = true;
     return $res;
 }
