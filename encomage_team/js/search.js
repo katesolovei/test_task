@@ -1,12 +1,13 @@
-$(function() {
+$.onreadystatechange = function() {
 
 //Живой поиск
-    $('#search').bind("change keyup input click", function () {
+    $('#search').click(function () {
         if (this.value.length >= 2) {
             $.ajax({
                 type: 'post',
                 url: "index.php", //Путь к обработчику
                 dаta: {
+                    search_submit:true,
                     id: $('#sId').val(),
                     firstName: $('#sFirstName').val(),
                     lastName: $('#sLastName').val(),
@@ -18,9 +19,7 @@ $(function() {
                 },
                 response: 'text',
                 success: function (data) {
-                    alert( data['id']);
-                    window.location = 'index.php?id='+data['id']+'firstName'+data['firstName'];
-                    //$(".search_result").html(data).fadeIn(); //Выводим полученые данные в списке
+                    $("#search").html(data); //Выводим полученые данные в списке
                 }
             })
         }
@@ -29,7 +28,7 @@ $(function() {
     $("#search").hover(function () {
         $("#search").blur(); //Убираем фокус с input
     })
-})
+}
 // //При выборе результата поиска, прячем список и заносим выбранный результат в input
 //     $(".search_result").on("click", "li", function(){
 //         s_user = $(this).text();
