@@ -90,7 +90,7 @@ if (isset($_POST['new'])) {
                 <hr>
             </div>
             <table>
-                <th style="width:10%"><a href="<?php sort('id'); ?>>">ID</a></th>
+                <th style="width:10%"><a href="<?php  ?>>">ID</a></th>
                 <th style="width:16%"><a href="sort('id')">First Name</a></th>
                 <th style="width:16%"><a href="sort('id')">Last Name</a></th>
                 <th style="width:16%"><a href="sort('id')">Email</a></th>
