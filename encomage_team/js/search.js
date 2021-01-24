@@ -1,11 +1,10 @@
 $.onreadystatechange = function() {
 
-//Живой поиск
     $('#search').click(function () {
         if (this.value.length >= 2) {
             $.ajax({
                 type: 'post',
-                url: "index.php", //Путь к обработчику
+                url: "index.php",
                 dаta: {
                     search_submit:true,
                     id: $('#sId').val(),
@@ -19,20 +18,13 @@ $.onreadystatechange = function() {
                 },
                 response: 'text',
                 success: function (data) {
-                    $("#search").html(data); //Выводим полученые данные в списке
+                    $("#search").html(data);
                 }
             })
         }
-    })
+    });
 
     $("#search").hover(function () {
-        $("#search").blur(); //Убираем фокус с input
+        $("#search").blur();
     })
 }
-// //При выборе результата поиска, прячем список и заносим выбранный результат в input
-//     $(".search_result").on("click", "li", function(){
-//         s_user = $(this).text();
-//         //$(".who").val(s_user).attr('disabled', 'disabled'); //деактивируем input, если нужно
-//         $(".search_result").fadeOut();
-//     })
-// })

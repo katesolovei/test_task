@@ -2,18 +2,19 @@
 include "config.php";
 
 date_default_timezone_set('Europe/Kiev');
-
+error_reporting(E_ERROR | E_WARNING | E_PARSE);
 $dbHost = DB_HOST;
 $dbUser = DB_USER;
 $dbPass = DB_PASS;
 $dbName = DB_NAME;
 $dbTable = DB_TABLE;
 
-$change = false;
+//$change = false;
 $users = [];
 $search_data = [];
 $check_id = [];
 $action = '';
+$fields = ['id', 'first_name', 'last_name', 'email', 'create_date', 'update_date'];
 //
 //$users = get_users();
 if (isset($_POST['new'])) {
@@ -25,9 +26,6 @@ if (isset($_POST['new'])) {
     $date_create['to'] = str_replace('T', ' ', test_input($_POST['createdTo']));
     $date_modified['from'] = str_replace('T', ' ', test_input($_POST['modifiedFrom']));
     $date_modified['to'] = str_replace('T', ' ', test_input($_POST['modifiedTo']));
-
-//    var_dump($search_email, $search_id);
-//    header('Location: index.php');
 }
 
 ?>
@@ -36,7 +34,8 @@ if (isset($_POST['new'])) {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link type="text/css" rel="stylesheet" href="css\style.css">
         <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
-        <script type="text/javascript" src="js/search.js"></script>
+        <script type="text/javascript" src="js\search.js"></script>
+        <script type="text/javascript" src="js\sort.js"></script>
     </head>
 
     <body>
@@ -50,13 +49,12 @@ if (isset($_POST['new'])) {
         save_user($first_name, $last_name, $email, $create_date, $modified_date);
 
         echo "<span><centre><h3>$first_name $last_name thanks for registering on our website</h3></centre></p>";
-
+        update_order($fields, true);
         header('Location: index.php');
     }
     if (isset($_POST['edit'])) {
         $id = $_POST['id'];
         $user_info = mysqli_fetch_assoc(get_user('id', $id));
-        //var_dump($user_info);
         if (!empty($_POST['firstName'])) {
             $first_name = test_input($_POST['firstName']);
         } else {
@@ -74,8 +72,7 @@ if (isset($_POST['new'])) {
         }
         $modified_date = date('Y-m-d H:i:s');
         update_user($id, $first_name, $last_name, $email, $modified_date);
-
-        //header('Location: index.php');
+        update_order($fields, true);
     }
     ?>
     <form method="post">
@@ -90,12 +87,22 @@ if (isset($_POST['new'])) {
                 <hr>
             </div>
             <table>
-                <th style="width:10%"><a href="<?php  ?>>">ID</a></th>
-                <th style="width:16%"><a href="sort('id')">First Name</a></th>
-                <th style="width:16%"><a href="sort('id')">Last Name</a></th>
-                <th style="width:16%"><a href="sort('id')">Email</a></th>
-                <th style="width:16%"><a href="sort('id')">Date Created</a></th>
-                <th style="width:16%"><a href="sort('id')">Last Modified</a></th>
+                <th style="width:10%"><a href="index.php?sort=id" class="sort" id="sort_id">ID</a>
+                </th>
+                <th style="width:17%"><a href="index.php?sort=first_name" class="sort"
+                                         id="sort_f_name">First Name</a>
+                </th>
+                <th style="width:17%"><a href="index.php?sort=last_name" class="sort"
+                                         id="sort_l_name">Last Name</a>
+                </th>
+                <th style="width:17%"><a href="index.php?sort=email" class="sort"
+                                         id="sort_email">Email</a></th>
+                <th style="width:13%"><a href="index.php?sort=create_date" class="sort"
+                                         id="sort_d_create">Date
+                        Created</a></th>
+                <th style="width:13%"><a href="index.php?sort=update_date" class="sort"
+                                         id="sort_l_modified">Last
+                        Modified</a></th>
                 <th style="width:10%">Action</th>
                 <tbody>
                 <tr>
@@ -135,12 +142,12 @@ if (isset($_POST['new'])) {
                 </tr>
                 <?php
                 if (isset($_POST['new'])) {
+                    update_order($fields, true);
                     $search_data = [];
                     if ($search_id != '') {
-                        $arr['param'][] = 'id';
+                        $search_data['param'][] = 'id';
                         $search_data['value'][] = $search_id;
-//                        $users[] = $search_data;
-                        $change = true;
+                        $_GET['change'] = 'id';
                     }
                     if ($search_first_name != '') {
 
@@ -171,33 +178,34 @@ if (isset($_POST['new'])) {
                         $change = true;
                     }
                 }
-                //                var_dump($search_data);
+
                 if (!$change) $users = get_users();
                 else $users = get_user($search_data['param'], $search_data['value']);
-                //                var_dump($users);
-                //                if($users) {
-                if ($change) {
-//                    var_dump($users);
+
+                $param = $_GET['sort'];
+
+                if ($_POST['search_submit']) {
                     if (is_array($users)) {
-//                        $len = count($users);
-//                        var_dump($len);
                         foreach ($users as $us) {
-                            print_users($us, $check_id, $search_data);
+                            if (isset($param)) sort_col($param);
+                            else print_users($us, $search_data);
                         }
 
                     } else {
-                        print_users($users, $check_id, $search_data);
+                        if (isset($param)) sort_col($param);
+                        else print_users($users, $search_data);
                     }
-
                 } else {
-                    print_users($users, $check_id, $search_data);
+                    if (isset($param)) sort_col($param);
+                    else print_users($users, $search_data);
                 }
-                //                }
                 ?>
                 </tbody>
             </table>
             <button class="registerbtn" id="search" name="search_submit">Submit</button>
-            <button type="reset" class="registerbtn">Reset</button>
+            <a href="index.php" class="btnlink">
+                <button type="button" class="registerbtn">Reset</button>
+            </a>
             <input type="text" name="new" value="new" hidden>
         </div>
     </form>
@@ -207,11 +215,8 @@ if (isset($_POST['new'])) {
 
 <?php
 
-function sort($param)
-{
-    print("Hello, sort by $param");
-}
-
+/*Check if DataBase exist
+if no - Create DataBase*/
 if (checkDB($dbName)) {
     createDB($dbHost, $dbUser, $dbPass, $dbName);
     if (!checkDB($dbName)) {
@@ -219,6 +224,9 @@ if (checkDB($dbName)) {
     }
 }
 
+
+/*Check if table users exist
+if no - create table users */
 if (checkTable($dbTable)) {
     createTable($dbHost, $dbUser, $dbPass, $dbName, $dbTable);
     if (!checkTable($dbTable)) {
@@ -226,6 +234,83 @@ if (checkTable($dbTable)) {
     }
 }
 
+/*Check if sort_prop (table with options - order - for sorting columns) exist
+if no - create table sort_prop */
+if (checkTable('sort_prop')) {
+    createTableSort($dbHost, $dbUser, $dbPass, $dbName, 'sort_prop');
+    if (!checkTable('sort_prop')) {
+        error();
+    }
+}
+
+/*function for sort realization*/
+function sort_col($param)
+{
+    $order = get_order($param)[$param]; // get sort order true -  ASC, or false -  DESC
+    $res = get_user('print', true); // get list of printed users
+
+    while ($tmp = mysqli_fetch_assoc($res)) $arr[] = $tmp;
+// sorting users
+    if ($order) {
+        usort($arr, function ($item1, $item2) use ($param) {
+            return $item1[$param] <=> $item2[$param];
+        });
+        $order = false;
+    } else {
+        usort($arr, function ($item1, $item2) use ($param) {
+            return $item2[$param] <=> $item1[$param];
+        });
+        $order = true;
+    }
+// print sorted users
+    foreach ($arr as $array) {
+        print_html($array);
+    }
+// change sorting option
+    update_order($param, $order);
+
+}
+
+/*function to get sorting order*/
+function get_order($param)
+{
+    $link = connectToDB();
+
+    $query = "SELECT $param FROM sort_prop";
+
+    $res = mysqli_query($link, $query);
+
+    $result = mysqli_fetch_array($res);
+    if ($res) {
+        return $result;
+    } else echo "Can't select users";
+}
+
+
+/*function for changing sorting option (order)*/
+function update_order($param, $status)
+{
+    $link = connectToDB();
+
+    if (is_array($param)) {
+        foreach ($param as $par) {
+            $query = "UPDATE sort_prop SET $par = '$status'";
+
+            $res = mysqli_query($link, $query);
+        }
+    } else {
+        $query = "UPDATE sort_prop SET $param = '$status'";
+
+        $res = mysqli_query($link, $query);
+    }
+
+    if ($res) {
+    } else {
+        echo mysqli_error($link);
+    }
+}
+
+/*Get all users from DataBase*/
 function get_users()
 {
     $link = connectToDB();
@@ -239,11 +324,11 @@ function get_users()
     } else echo "Can't select users";
 }
 
+/*Get user, who has searched params*/
 function get_user($param1, $value1)
 {
     $link = connectToDB();
-////    $i = 0;
-//    var_dump($param1);
+    // if several params were input
     if (is_array($param1)) {
         $len = count($param1);
         for ($i = 0; $i < $len; $i++) {
@@ -260,10 +345,8 @@ function get_user($param1, $value1)
                 } elseif ($to) {
                     $query = "SELECT * FROM users WHERE $param <= '$to'";
                 }
-                print_r($query);
             } else {
                 $query = "SELECT * FROM users WHERE $param = '$value'";
-                print_r($query);
             }
             $res = mysqli_query($link, $query);
         }
@@ -291,18 +374,16 @@ function get_user($param1, $value1)
     } else echo "Can't select users";
 }
 
-function print_users($users, $check_id, $search_data){
+/*Preaparing list of users (result of search) to print*/
+function print_users($users, $search_data)
+{
     foreach ($users as $user) {
-//        var_dump($user);
         $result[] = $user;
-        $len_res = count($result);
-        $id = $user['id'];
         $count = 0;
         $len = count($search_data);
-
         for ($i = 0; $i < $len; $i++) {
+            if ($i == $len) break;
             if (($search_data['param'][$i] == 'create_date') || ($search_data['param'][$i] == 'update_date')) {
-
                 $count++;
             } else {
                 if ($user[$search_data['param'][$i]] == $search_data['value'][$i]) {
@@ -312,7 +393,6 @@ function print_users($users, $check_id, $search_data){
             }
         }
         if ($len == $count) {
-//            var_dump($search_data);
             $result1[] = $user['id'];
             $len = count($result1);
             for ($i = 0; $i < $len; $i++) {
@@ -321,38 +401,65 @@ function print_users($users, $check_id, $search_data){
         }
     }
     $res = array_unique($res);
-    $length1 = count($res);
-//    var_dump($length1);
     foreach ($res as $re) {
         $lot = get_user('id', $re);
         $user = mysqli_fetch_assoc($lot);
-        echo "<tr><td>" . $user['id'] . "</td>";
-        echo '<td>' . $user['first_name'] . '</td>';
-        echo "<td>" . $user['last_name'] . "</td>";
-        echo "<td>" . $user['email'] . "</td>";
-        echo "<td>" . $user['create_date'] . "</td>";
-        echo "<td>" . $user['update_date'] . "</td>";
-        echo "<td><a href='edit.php?id=$id'class='edit'>Edit</a></td></tr>";
+        $printed_id[] = $user['id'];
+        print_html($user);
+    }
+    $all_users = get_users();
+    while ($tmp = mysqli_fetch_assoc($all_users)) $all_users_array[] = $tmp['id'];
+
+    foreach ($all_users_array as $id) {
+        if (in_array($id, $printed_id)) continue;
+        else update_print_stat($id, false);
     }
 }
 
-function save_user($first_name, $last_name, $email, $create_date, $update_date)
+/*HTML code generating*/
+function print_html($user)
+{
+    echo "<tr><td class='output'>" . $user['id'] . "</td>";
+    echo "<td class='output'>" . $user['first_name'] . '</td>';
+    echo "<td class='output'>" . $user['last_name'] . "</td>";
+    echo "<td class='output'>" . $user['email'] . "</td>";
+    echo "<td class='output'>" . $user['create_date'] . "</td>";
+    echo "<td class='output'>" . $user['update_date'] . "</td>";
+    echo "<td><a href='edit.php?id=" . $user['id'] . "'class='edit'>Edit</a></td></tr>";
+    update_print_stat($user['id'], true);
+}
+
+/*Changing print status (printed on the page - true< else - false)*/
+function update_print_stat($id, $status)
 {
     $link = connectToDB();
 
-    $query = "INSERT INTO users(first_name, last_name, email, create_date, update_date) VALUES ('$first_name', '$last_name', '$email', '$create_date', '$update_date')";
+    $query = "UPDATE users SET print = '$status' WHERE id = '$id'";
 
     $res = mysqli_query($link, $query);
 
     if ($res) {
-        // header("Location: index.php");
     } else {
-        //  $result = '';
-        $error = 'Sory, something went wrong' . $res;
         echo mysqli_error($link);
     }
 }
 
+/*Saving user to DataBase*/
+function save_user($first_name, $last_name, $email, $create_date, $update_date)
+{
+    $link = connectToDB();
+
+    $query = "INSERT INTO users(first_name, last_name, email, create_date, update_date, print) VALUES ('$first_name', '$last_name', '$email', '$create_date', '$update_date', true)";
+
+    $res = mysqli_query($link, $query);
+
+    if ($res) {
+    } else {
+        echo mysqli_error($link);
+    }
+}
+
+/*Updating user information after changing*/
 function update_user($id, $first_name, $last_name, $email, $modified_date)
 {
     $link = connectToDB();
@@ -370,12 +477,13 @@ function update_user($id, $first_name, $last_name, $email, $modified_date)
     }
 }
 
+/*Error message*/
 function error()
 {
     echo "Sorry, something went wrong";
-    //die();
 }
 
+/*Creating DataBase*/
 function createDB($dbHost, $dbUser, $dbPass, $dbName)
 {
 
@@ -391,6 +499,7 @@ function createDB($dbHost, $dbUser, $dbPass, $dbName)
     mysqli_close($link);
 }
 
+/*Creating table users*/
 function createTable($dbHost, $dbUser, $dbPass, $dbName, $dbTable)
 {
 
@@ -402,6 +511,7 @@ function createTable($dbHost, $dbUser, $dbPass, $dbName, $dbTable)
     email VARCHAR(30) NOT NULL ,
     create_date VARCHAR(30) NOT NULL,
     update_date VARCHAR(30) NOT NULL,
+    print BOOLEAN NOT NULL,
     PRIMARY KEY (id))";
 
     if (mysqli_query($link, $query)) {
@@ -413,6 +523,36 @@ function createTable($dbHost, $dbUser, $dbPass, $dbName, $dbTable)
     mysqli_close($link);
 }
 
+/*Creating table with options for sort realisation
+and setting default order values - true - ASC sort*/
+function createTableSort($dbHost, $dbUser, $dbPass, $dbName, $dbTable)
+{
+
+    $link = mysqli_connect($dbHost, $dbUser, $dbPass, $dbName);
+
+    $query = "CREATE TABLE $dbName.$dbTable ( 
+        id BOOLEAN NOT NULL DEFAULT TRUE, 
+        first_name BOOLEAN NOT NULL DEFAULT TRUE , 
+        last_name BOOLEAN NOT NULL DEFAULT TRUE , 
+        email BOOLEAN NOT NULL DEFAULT TRUE , 
+        create_date BOOLEAN NOT NULL DEFAULT TRUE , 
+        update_date BOOLEAN NOT NULL DEFAULT TRUE )";
+
+    if (mysqli_query($link, $query)) {
+        echo "Table created successfully with the name '$dbTable'";
+    } else {
+        echo "Error creating Table: " . mysqli_error($link);
+    }
+    $query = "INSERT INTO $dbTable(first_name, last_name, email, create_date, update_date) VALUES (true, true, true, true, true)";
+    if (mysqli_query($link, $query)) {
+        echo "Table created successfully with the name '$dbTable'";
+    } else {
+        echo "Error creating Table: " . mysqli_error($link);
+    }
+    mysqli_close($link);
+}
+
+/*Checking if DataBase exists*/
 function checkDB($name)
 {
     $link = connectToDB();
@@ -424,6 +564,7 @@ function checkDB($name)
     return $res;
 }
 
+/*Checking if table exists*/
 function checkTable($name)
 {
     $link = connectToDB();
@@ -435,6 +576,7 @@ function checkTable($name)
     return $res;
 }
 
+/*Processing of input data*/
 function test_input($data)
 {
     $data = trim($data);
@@ -443,6 +585,7 @@ function test_input($data)
     return $data;
 }
 
+/*Connect to DataBase*/
 function connectToDB()
 {
     $host = DB_HOST;

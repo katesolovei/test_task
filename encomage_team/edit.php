@@ -11,8 +11,6 @@ $dbname = DB_NAME;
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-    <script src="js/search.js"></script>
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -68,30 +66,27 @@ $dbname = DB_NAME;
 <form action="index.php" method="post" name="reg_form">
     <div class="container">
         <?php
-        $id = $_GET['id'];?>
+        $id = $_GET['id'];
+        ?>
         <input type="hidden" name="id" value="<?=$id?>">
         <div>
             <h1 style="display: inline;">Edit user</h1>
-            <button type="button" name="save_edit" class="btnlink"><a style="color: white; text-decoration: none;" href="edit.php?id=<?=$id?>&change=1">&#10010 Save and Continue Edit</a></button>
             <button type="submit" name="edit" class="btnlink">&#10010 Save</button>
             <a href="index.php"><button type="button" name="back" class="btnlink">&#8656 Back</button></a>
         </div>
         <div style="clear: both;"><hr></div>
         <?php
-        if($_GET['change']=='1'){
-            update_user();
-        }
             $user = mysqli_fetch_assoc(get_user('id', $id));
         ?>
         <label for="firstName"><b>First name</b></label>
-        <input class="text_input" type="text" placeholder="Enter your First Name" name="firstName" value="<?php echo $user['first_name']?>">
+        <input class="text_input" id="firstName" type="text" placeholder="Enter your First Name" name="firstName" value="<?=$user['first_name']?>">
 
         <label for="lastName"><b>Last Name</b></label>
-        <input class="text_input" type="text" placeholder="Last Name" name="lastName" value="<?=$user['last_name']?>">
+        <input class="text_input" id="lastName" type="text" placeholder="Last Name" name="lastName" value="<?=$user['last_name']?>">
 
 
         <label for="email"><b>Email</b></label>
-        <input class="text_input" type="email" placeholder="Enter Email" name="email" id="email" value="<?=$user['email']?>">
+        <input class="text_input" id="email" type="email" placeholder="Enter Email" name="email" id="email" value="<?=$user['email']?>">
 
         <hr>
     </div>
@@ -101,22 +96,8 @@ $dbname = DB_NAME;
 </html>
 
 <?php
-function update_user($id, $first_name, $last_name, $email, $modified_date){
-    $link = connectToDB();
 
-    $query = "UPDATE users SET first_name = '$first_name', last_name = '$last_name', email = '$email', update_date = '$modified_date' WHERE id = '$id'";
-
-    $res = mysqli_query($link, $query);
-
-    if ($res){
-        // header("Location: index.php");
-    } else{
-        //  $result = '';
-        $error = 'Sory, something went wrong'.$res;
-        echo mysqli_error($link);
-    }
-}
-
+/*Get user info to fill input fields*/
 function get_user($param, $value){
     $link = connectToDB();
     $query = '';
